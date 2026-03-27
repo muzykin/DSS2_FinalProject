@@ -78,4 +78,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+using (var scope = app.Services.CreateScope())
+{
+	var dbContext = scope.ServiceProvider.GetRequiredService<Todo.Api.Data.TodoDbContext>();
+	dbContext.Database.EnsureCreated();
+}
+
 app.Run();
