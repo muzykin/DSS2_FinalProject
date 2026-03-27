@@ -1,9 +1,10 @@
 services:
   backend:
-    image: ${BACKEND_IMAGE:-todo-api-example}
+    build:
+      context: ./Backend
     environment:
       ASPNETCORE_URLS: http://+:3087
-      ConnectionStrings__Default: Host=db;Port=5432;Database=todos;Username=postgres;Password=postgres
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=todos;Username=postgres;Password=postgres
       Jwt__Key: super_secret_dev_key_change_me
     ports:
       - "3087:3087"
