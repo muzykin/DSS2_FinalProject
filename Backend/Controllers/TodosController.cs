@@ -7,6 +7,7 @@ using System.Text.Json;
 using Todo.Api.Data;
 using Todo.Api.Models;
 using Todo.Api.DTOs;
+using Todo.Api.Services;
 
 namespace Todo.Api.Controllers
 {
@@ -17,11 +18,13 @@ namespace Todo.Api.Controllers
 	{
 		private readonly AppDbContext _context;
 		private readonly IDistributedCache _cache;
+		private readonly IRabbitMqService _rabbitMq; // RabbitMQ
 
-		public TodosController(AppDbContext context, IDistributedCache cache)
+		public TodosController(AppDbContext context, IDistributedCache cache, IRabbitMqService rabbitMq)
 		{
 			_context = context;
 			_cache = cache;
+			_rabbitMq = rabbitMq;
 		}
 
 		private Guid GetCurrentUserId()
@@ -202,6 +205,8 @@ namespace Todo.Api.Controllers
 			_context.Todos.Add(todo);
 			await _context.SaveChangesAsync();
 
+			_rabbitMq.PublishEvent("TodoCreated", new { Id = todo.Id, Title = todo.Title });
+
 			return CreatedAtAction(nameof(GetTodoById), new { id = todo.Id }, MapToResponse(todo));
 		}
 
@@ -246,6 +251,9 @@ namespace Todo.Api.Controllers
 			todo.UpdatedAt = DateTime.UtcNow;
 
 			await _context.SaveChangesAsync();
+
+			// RabbitMQ send event when completion status changes
+			_rabbitMq.PublishEvent("TodoCompleted", new { Id = todo.Id, IsCompleted = todo.IsCompleted });
 
 			return Ok(MapToResponse(todo));
 		}
