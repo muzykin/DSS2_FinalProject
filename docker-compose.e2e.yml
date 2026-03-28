@@ -1,4 +1,10 @@
 services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
   redis:
     image: redis:alpine
     ports:
@@ -7,16 +13,19 @@ services:
   backend:
     build:
       context: ./Backend
+    restart: on-failure
     environment:
       ASPNETCORE_URLS: http://+:3087
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=todos;Username=postgres;Password=postgres
       ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__RabbitMQ: amqp://guest:guest@rabbitmq:5672
       Jwt__Key: super_secret_dev_key_change_me
     ports:
       - "3087:3087"
     depends_on:
       - db
       - redis
+      - rabbitmq
 
   db:
     image: postgres:16-alpine
