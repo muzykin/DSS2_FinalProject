@@ -8,7 +8,7 @@ namespace Todo.Api.DTOs
 		public Guid Id { get; set; }
 		public string Title { get; set; } = string.Empty;
 		public string? Details { get; set; }
-		public string Priority { get; set; } = string.Empty;
+		public Priority Priority { get; set; } // The JSON converter will make this lowercase string
 		public string? DueDate { get; set; }
 		public bool IsCompleted { get; set; }
 		public bool IsPublic { get; set; }
