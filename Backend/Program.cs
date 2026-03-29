@@ -24,7 +24,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 builder.Services.AddSingleton<IRabbitMqService, RabbitMqService>();
 
 // 4. Configure JWT Authentication
-var jwtKey = builder.Configuration["JwtSettings:SecretKey"] ?? throw new InvalidOperationException("JWT Secret is missing");
+var jwtKey = builder.Configuration["JwtSettings:SecretKey"] ?? "ThisIsAVerySecretKeyForTodoApiProjectDDS2DoNotShare";
 var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -32,12 +32,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	{
 		options.TokenValidationParameters = new TokenValidationParameters
 		{
-			ValidateIssuer = true,
-			ValidateAudience = true,
+			ValidateIssuer = false, // Отключаем проверку
+			ValidateAudience = false, // Отключаем проверку
 			ValidateLifetime = true,
 			ValidateIssuerSigningKey = true,
-			ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-			ValidAudience = builder.Configuration["JwtSettings:Audience"],
 			IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
 		};
 	});
@@ -47,7 +45,10 @@ builder.Services.AddCors(options =>
 {
 	options.AddPolicy("AllowAll", policy =>
 	{
-		policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+		policy.SetIsOriginAllowed(origin => true) // Разрешаем любые порты фронтенда
+			  .AllowAnyMethod()
+			  .AllowAnyHeader()
+			  .AllowCredentials(); // Обязательно для токенов
 	});
 });
 
@@ -85,12 +86,10 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-	app.UseSwagger();
-	app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
+// ПОРЯДОК ВАЖЕН
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -100,18 +99,17 @@ using (var scope = app.Services.CreateScope())
 {
 	var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-	// Trying to connect to the database with retries in case it's not ready yet
 	int maxRetries = 5;
 	for (int i = 0; i < maxRetries; i++)
 	{
 		try
 		{
 			dbContext.Database.EnsureCreated();
-			break; 
+			break;
 		}
 		catch (Exception ex)
 		{
-			if (i == maxRetries - 1) throw; 
+			if (i == maxRetries - 1) throw;
 			Console.WriteLine($"Database not ready yet, retrying in 2 seconds... (Attempt {i + 1}/{maxRetries})");
 			Thread.Sleep(2000);
 		}

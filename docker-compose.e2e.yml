@@ -19,7 +19,7 @@ services:
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=todos;Username=postgres;Password=postgres
       ConnectionStrings__Redis: redis:6379
       ConnectionStrings__RabbitMQ: amqp://guest:guest@rabbitmq:5672
-      Jwt__Key: super_secret_dev_key_change_me
+      JwtSettings__SecretKey: ThisIsAVerySecretKeyForTodoApiProjectDDS2DoNotShare
     ports:
       - "3087:3087"
     depends_on:

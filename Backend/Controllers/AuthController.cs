@@ -26,13 +26,11 @@ namespace Todo.Api.Controllers
 		[HttpPost("register")]
 		public async Task<IActionResult> Register([FromBody] RegisterRequest request)
 		{
-			// Check if email already exists
 			if (await _context.Users.AnyAsync(u => u.Email == request.Email))
 			{
-				return Conflict(new { message = "Email already in use" }); // 409 Conflict
+				return Conflict(new { message = "Email already in use" });
 			}
 
-			// Hash password using BCrypt
 			string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
 			var newUser = new User
@@ -52,22 +50,22 @@ namespace Todo.Api.Controllers
 				DisplayName = newUser.DisplayName
 			};
 
-			return Created("", response); // 201 Created
+			return Created("", response);
 		}
 
 		[HttpPost("login")]
 		public async Task<IActionResult> Login([FromBody] LoginRequest request)
 		{
-			// Find user by email
+			Console.WriteLine($"DEBUG LOGIN: email={request.Email}");
+
 			var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == request.Email);
 
-			// Verify user exists and password is correct
 			if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
 			{
-				return Unauthorized(new { message = "Invalid email or password" }); // 401 Unauthorized
+				Console.WriteLine("DEBUG LOGIN: invalid credentials");
+				return Unauthorized(new { message = "Invalid email or password" });
 			}
 
-			// Generate JWT Token
 			var token = GenerateJwtToken(user);
 
 			var response = new LoginResponse
@@ -83,12 +81,14 @@ namespace Todo.Api.Controllers
 				}
 			};
 
-			return Ok(response); // 200 OK
+			Console.WriteLine($"DEBUG LOGIN: success userId={user.Id}");
+
+			return Ok(response);
 		}
 
 		private string GenerateJwtToken(User user)
 		{
-			var keyStr = _config["JwtSettings:SecretKey"] ?? throw new InvalidOperationException("JWT Secret missing");
+			var keyStr = _config["JwtSettings:SecretKey"] ?? "ThisIsAVerySecretKeyForTodoApiProjectDDS2DoNotShare";
 			var keyBytes = Encoding.UTF8.GetBytes(keyStr);
 
 			var claims = new[]
@@ -102,8 +102,7 @@ namespace Todo.Api.Controllers
 			{
 				Subject = new ClaimsIdentity(claims),
 				Expires = DateTime.UtcNow.AddSeconds(3600),
-				Issuer = _config["JwtSettings:Issuer"],
-				Audience = _config["JwtSettings:Audience"],
+				// УБРАЛИ ISSUER И AUDIENCE ОТСЮДА!
 				SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256Signature)
 			};
 

@@ -22,12 +22,19 @@ import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import { api, isApiError } from "../api/client";
 import TodoDialog from "../components/TodoDialog";
 import TodoFilters from "../components/TodoFilters";
+import { useAuth } from "../auth/AuthContext";
 
 const TodosPage = () => {
+  const { token } = useAuth();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
-  const [data, setData] = React.useState({ items: [], page: 1, pageSize: 10, totalItems: 0, totalPages: 1 });
-
+  const [data, setData] = React.useState({
+    items: [],
+    page: 1,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 1
+  });
   const [filters, setFilters] = React.useState({
     search: "",
     status: "all",
@@ -35,24 +42,27 @@ const TodosPage = () => {
     sortBy: "createdAt",
     sortDir: "desc"
   });
-
   const [dialog, setDialog] = React.useState({ open: false, mode: "create", todo: null });
+  // Единственный источник текущей страницы:
+  const [currentPage, setCurrentPage] = React.useState(1);
 
-  const fetchList = async (page = 1) => {
+  // Получить список задач
+  const fetchList = async (page = 1, externalFilters = filters) => {
     setLoading(true);
     setError("");
     try {
       const params = {
         page,
         pageSize: data.pageSize,
-        search: filters.search || undefined,
-        status: filters.status || undefined,
-        priority: filters.priority || undefined,
-        sortBy: filters.sortBy,
-        sortDir: filters.sortDir
+        search: externalFilters.search || undefined,
+        status: externalFilters.status || undefined,
+        priority: externalFilters.priority || undefined,
+        sortBy: externalFilters.sortBy,
+        sortDir: externalFilters.sortDir
       };
       const res = await api.get("/api/todos", { params });
       setData(res.data);
+      setCurrentPage(page);
     } catch (err) {
       if (isApiError(err)) setError(err.response?.data?.title || "Failed to load todos");
       else setError("Failed to load todos");
@@ -61,12 +71,25 @@ const TodosPage = () => {
     }
   };
 
-  React.useEffect(() => { fetchList(1); /* eslint-disable-line */ }, []);
+  // Сброс страницы на первую при изменении фильтров (как требует Cypress)
+  React.useEffect(() => {
+    if (!token) return;
+    fetchList(1, filters);
+    // eslint-disable-next-line
+  }, [token, filters]);
 
+  // Открытие/закрытие/создание/редактирование
   const openCreate = () => setDialog({ open: true, mode: "create", todo: null });
   const openEdit = (t) => setDialog({ open: true, mode: "edit", todo: t });
-  const closeDialog = () => setDialog((p) => ({ ...p, open: false }));
+  const closeDialog = () => setDialog(p => ({ ...p, open: false }));
 
+  // Применение фильтров с кнопки (исключительно если твой фильтр — с кнопкой "Применить")
+  const handleApplyFilters = () => {
+    setCurrentPage(1);
+    fetchList(1, filters);
+  };
+
+  // Сохранить (после создания/редактирования — сбрасываем на первую)
   const saveTodo = async (payload) => {
     try {
       if (dialog.mode === "create") {
@@ -75,32 +98,42 @@ const TodosPage = () => {
         await api.put(`/api/todos/${dialog.todo.id}`, payload);
       }
       closeDialog();
-      await fetchList(1);
+      setCurrentPage(1);
+      await fetchList(1, filters);
     } catch (err) {
       if (isApiError(err)) setError(err.response?.data?.title || "Save failed");
       else setError("Save failed");
     }
   };
 
+  // Переключить завершенность — остаемся на текущей странице
   const toggleCompletion = async (t) => {
     try {
       await api.patch(`/api/todos/${t.id}/completion`, { isCompleted: !t.isCompleted });
-      await fetchList(data.page || 1);
+      await fetchList(currentPage, filters);
     } catch (err) {
       if (isApiError(err)) setError(err.response?.data?.title || "Update failed");
       else setError("Update failed");
     }
   };
 
+  // Удаление задачи — сбрасываем на первую
   const deleteTodo = async (t) => {
-    if (!confirm(`Delete "${t.title}"?`)) return;
+    if (!window.confirm(`Delete "${t.title}"?`)) return;
     try {
       await api.delete(`/api/todos/${t.id}`);
-      await fetchList(1);
+      setCurrentPage(1);
+      await fetchList(1, filters);
     } catch (err) {
       if (isApiError(err)) setError(err.response?.data?.title || "Delete failed");
       else setError("Delete failed");
     }
+  };
+
+  // Меняем страницу через Pagination
+  const handlePageChange = (_, p) => {
+    setCurrentPage(p);
+    fetchList(p, filters);
   };
 
   return (
@@ -112,7 +145,7 @@ const TodosPage = () => {
         </Button>
       </Stack>
 
-      <TodoFilters value={filters} onChange={setFilters} onApply={() => fetchList(1)} />
+      <TodoFilters value={filters} onChange={setFilters} onApply={handleApplyFilters} />
 
       {error ? <Alert severity="error" data-cy="todos-error">{error}</Alert> : null}
 
@@ -162,8 +195,8 @@ const TodosPage = () => {
             <Stack direction="row" justifyContent="center" sx={{ mt: 2 }}>
               <Pagination
                 count={data.totalPages || 1}
-                page={data.page || 1}
-                onChange={(_, p) => fetchList(p)}
+                page={currentPage}
+                onChange={handlePageChange}
                 data-cy="todos-pagination"
               />
             </Stack>

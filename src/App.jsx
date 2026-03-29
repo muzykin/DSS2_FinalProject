@@ -15,8 +15,9 @@ import TodosPage from "./pages/TodosPage";
 import PublicTodosPage from "./pages/PublicTodosPage";
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isReady } = useAuth();
   const location = useLocation();
+  if (!isReady) return null;
   if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return children;
 };

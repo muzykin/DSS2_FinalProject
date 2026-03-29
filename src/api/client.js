@@ -21,4 +21,9 @@ export const setAuthToken = (token) => {
   api.defaults.headers.common.Authorization = `Bearer ${token}`;
 };
 
+const token = localStorage.getItem("todo_token");
+if (token) {
+  setAuthToken(token);
+}
+
 export const isApiError = (err) => !!(err && err.response);

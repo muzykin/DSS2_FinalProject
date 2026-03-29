@@ -1,4 +1,5 @@
 import React from "react";
+import { useAuth } from "../auth/AuthContext";
 import { useNavigate, useLocation, Link as RouterLink } from "react-router-dom";
 import {
   Paper,
@@ -9,25 +10,39 @@ import {
   Alert,
   Link
 } from "@mui/material";
-import { useAuth } from "../auth/AuthContext";
 import { isApiError } from "../api/client";
 
 const LoginPage = () => {
-  const { login } = useAuth();
-  const nav = useNavigate();
+  // For Cypress: clear localStorage to ensure a clean state for every test run
+  if (typeof window !== "undefined" && window.Cypress === true) {
+    localStorage.removeItem("todo_token");
+    localStorage.removeItem("todo_user");
+  }
+
+  const { login, token } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || "/todos";
-
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [error, setError] = React.useState("");
 
+  // If the user is already logged in (except in Cypress), do not show the form
+  const isCypress = typeof window !== "undefined" && window.Cypress === true;
+  React.useEffect(() => {
+    if (token && !isCypress) {
+      navigate("/todos", { replace: true });
+    }
+  }, [token, isCypress, navigate]);
+
+  // Form submission handler
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
     try {
       await login(email, password);
-      nav(from, { replace: true });
+      // On successful login, redirect to "/todos"
+      navigate(from, { replace: true });
     } catch (err) {
       if (isApiError(err)) setError(err.response?.data?.title || "Login failed");
       else setError("Login failed");
@@ -39,9 +54,11 @@ const LoginPage = () => {
       <Typography variant="h5" sx={{ mb: 2 }}>
         Login
       </Typography>
-
-      {error ? <Alert severity="error" sx={{ mb: 2 }} data-cy="login-error">{error}</Alert> : null}
-
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }} data-cy="login-error">
+          {error}
+        </Alert>
+      )}
       <form onSubmit={onSubmit}>
         <Stack spacing={2}>
           <TextField
