@@ -1,5 +1,5 @@
 {
-  "startedAt": "2026-03-04T13:51:44.042Z",
+  "startedAt": "2026-03-31T17:33:51.895Z",
   "categories": {
     "Authentication & user isolation": {
       "earned": 0,
@@ -14,9 +14,9 @@
       "total": 1
     },
     "Basic CRUD + completion + validation": {
-      "earned": 0,
+      "earned": 32,
       "max": 40,
-      "passed": 0,
+      "passed": 4,
       "total": 5
     },
     "Pagination": {
@@ -38,9 +38,9 @@
       "total": 2
     },
     "Search": {
-      "earned": 3,
+      "earned": 0,
       "max": 6,
-      "passed": 1,
+      "passed": 0,
       "total": 2
     },
     "Bonus: Redis integration": {
@@ -56,6 +56,6 @@
       "total": 1
     }
   },
-  "totalEarned": 3,
+  "totalEarned": 32,
   "maxEarnable": 110
 }
