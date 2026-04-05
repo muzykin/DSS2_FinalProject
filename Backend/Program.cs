@@ -32,8 +32,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	{
 		options.TokenValidationParameters = new TokenValidationParameters
 		{
-			ValidateIssuer = false, // Отключаем проверку
-			ValidateAudience = false, // Отключаем проверку
+			ValidateIssuer = false,
+			ValidateAudience = false,
 			ValidateLifetime = true,
 			ValidateIssuerSigningKey = true,
 			IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
@@ -45,10 +45,10 @@ builder.Services.AddCors(options =>
 {
 	options.AddPolicy("AllowAll", policy =>
 	{
-		policy.SetIsOriginAllowed(origin => true) // Разрешаем любые порты фронтенда
+		policy.SetIsOriginAllowed(origin => true)
 			  .AllowAnyMethod()
 			  .AllowAnyHeader()
-			  .AllowCredentials(); // Обязательно для токенов
+			  .AllowCredentials();
 	});
 });
 
@@ -89,7 +89,6 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ПОРЯДОК ВАЖЕН
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();

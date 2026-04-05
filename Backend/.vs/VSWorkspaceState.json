@@ -3,8 +3,9 @@
     "",
     "\\Controllers",
     "\\DTOs",
+    "\\Models",
     "\\Services"
   ],
-  "SelectedNode": "\\Controllers\\AuthController.cs",
+  "SelectedNode": "\\appsettings.json",
   "PreviewInSolutionExplorer": false
 }
