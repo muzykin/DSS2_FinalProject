@@ -1,21 +1,23 @@
 services:
   backend:
-    image: ${BACKEND_IMAGE:-todo-api-example}
+    build:
+      context: ../Backend
+      dockerfile: Dockerfile
     environment:
       ASPNETCORE_URLS: http://+:3087
-      ConnectionStrings__Default: Host=db;Port=5432;Database=todos;Username=postgres;Password=postgres
-      Jwt__Key: super_secret_dev_key_change_me
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=TodoManagementDb;Username=postgres;Password=postgrespassword
+      Jwt__Key: ThisIsAVerySecretKeyForTodoApiProjectDDS2DoNotShare
     ports:
       - "3087:3087"
     depends_on:
       - db
 
   db:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     environment:
-      POSTGRES_DB: todos
+      POSTGRES_DB: TodoManagementDb
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: postgrespassword
     ports:
       - "5432:5432"
     volumes:
