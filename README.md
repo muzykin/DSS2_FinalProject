@@ -1,69 +1,54 @@
-# Todo Frontend + Cypress Scoring Suite (React + MUI)
+# Full-stack ToDo Application
 
-This package includes:
-- React + MUI frontend (same UI as the reference frontend)
-- Cypress E2E tests with a points-based score summary
+This is the final project for DSS2. It includes a .NET 8 Backend API, a React Frontend, PostgreSQL database, and integrations with Redis and RabbitMQ.
 
-## Run frontend only (local dev)
+## 🚀 How to run the project (2 ways)
 
-1) Start your backend on **http://localhost:3087**
-2) Configure `.env`:
+First, clone the repository:
+```bash
+git clone https://github.com/muzykin/DSS2_FinalProject.git
+cd DSS2_FinalProject
 
-```
-VITE_API_BASE_URL=http://localhost:3087
-```
+1. The Easy Way: Using Docker (Recommended for E2E Tests)
+Everything is fully automated. You don't need to install .NET, Node.js, or set any environment variables manually.
 
-3) Run:
+Run this single command from the root directory:
 
-```
+docker compose -f Frontend/docker-compose.e2e.yml up --build --exit-code-from cypress
+
+This command will:
+
+Build and start the PostgreSQL database, Redis, and RabbitMQ.
+Build and start the .NET Backend (http://localhost:3087).
+Build and start the React Frontend (http://localhost:3000).
+Automatically apply Entity Framework database migrations.
+Run the Cypress E2E tests in a headless container and exit with the test score.
+(To view Swagger UI, you can run the same command without --exit-code-from cypress and open http://localhost:3087/swagger in your browser).
+
+2. The Developer Way: Running Locally
+If you want to run the project locally for development or manual testing:
+
+Step A: Start the databases You can use the provided e2e compose file just to spin up the databases in the background:
+
+docker compose -f Frontend/docker-compose.e2e.yml up db redis rabbitmq -d
+
+Step B: Start the Backend Open a new terminal:
+
+cd Backend
+dotnet run
+
+The API will be running at http://localhost:3087 (Swagger available at /swagger).
+
+Step C: Start the Frontend and Cypress Open another terminal:
+
+cd Frontend
 npm install
 npm run dev
-```
 
-Open http://localhost:5173
+Open a final terminal to run tests with UI:
 
-## Run Cypress locally (against local frontend)
+cd Frontend
+npm run cy:open
 
-Terminal A:
-```
-npm run dev
-```
-
-Terminal B:
-```
-# backend must be running on 3087
-CYPRESS_API_BASE_URL=http://localhost:3087 npm run cy:run
-```
-
-## Run frontend + Cypress in Docker (recommended for scoring)
-
-This compose file runs:
-- Postgres
-- Backend container (swap the image via BACKEND_IMAGE)
-- Frontend container
-- Cypress container (runs tests and outputs score)
-
-```
-BACKEND_IMAGE=todo-api-example docker compose -f docker-compose.e2e.yml up --build --exit-code-from cypress
-```
-
-### Where to find the score
-After the run:
-- console output shows a per-category summary
-- `cypress/results/score.json` contains the machine-readable result
-
-## Using the provided example backend image
-
-If you downloaded the example backend zip separately, build it as a Docker image:
-
-```
-docker build -t todo-api-example .
-```
-
-(from inside the backend folder)
-
-Then run E2E compose from this folder:
-
-```
-BACKEND_IMAGE=todo-api-example docker compose -f docker-compose.e2e.yml up --build --exit-code-from cypress
-```
+📋 Deliverables Note
+The required screenshots of the Swagger UI, API requests/responses, and Database tables are included in the Word document report attached to the root of this repository.
